@@ -1,0 +1,78 @@
+graph TB
+    subgraph Client["🌐 Client Layer"]
+        Browser["User Browser"]
+        UI["React Frontend<br/>http://localhost:5173<br/><br/>- DetectionInterface<br/>- Upload Component<br/>- Results Display<br/>- Confidence Slider"]
+        Browser -->|Renders| UI
+    end
+
+    subgraph UserInteraction["📤 User Input"]
+        Upload["📤 Upload Image<br/>- Drag & Drop<br/>- File Selection"]
+        Webcam["📹 Webcam Capture<br/>- Real-time Feed<br/>- Capture Button"]
+        Threshold["⚙️ Confidence Threshold<br/>Slider Control"]
+    end
+
+    UI -->|User Actions| Upload
+    UI -->|User Actions| Webcam
+    UI -->|Configuration| Threshold
+
+    subgraph Network["🌍 Network"]
+        HTTP["HTTP POST /detect-image<br/>JSON: image + confidence"]
+    end
+
+    Upload -->|Submit| HTTP
+    Webcam -->|Submit| HTTP
+
+    subgraph Backend["⚙️ Backend Layer"]
+        Flask["Flask App<br/>http://localhost:5000<br/><br/>- CORS Enabled<br/>- Max File: 16MB<br/>- Model: Pre-loaded"]
+        
+        Router["routes/detect.py<br/>REST API Endpoints<br/><br/>- GET /health<br/>- POST /detect-image<br/>- GET /classes<br/>- GET /model-info"]
+        
+        YOLOService["services/yolo_service.py<br/>YOLOService Class<br/><br/>- Load YOLOv8 Model<br/>- Run Inference<br/>- Parse Results<br/>- Extract Bounding Boxes<br/>- Map Class IDs"]
+        
+        ImageUtils["utils/image_utils.py<br/>Image Processing<br/><br/>- save_uploaded_file<br/>- draw_detections<br/>- image_to_base64<br/>- get_dimensions"]
+    end
+
+    HTTP -->|Route Request| Flask
+    Flask -->|Processes| Router
+    Router -->|Calls| YOLOService
+    YOLOService -->|Processes| ImageUtils
+
+    subgraph ML["🤖 ML Model Layer"]
+        Model["YOLOv8 Model<br/>trained-model/weights/<br/><br/>- best.pt<br/>- last.pt"]
+        Classes["Class Labels<br/>- Fire Extinguisher<br/>- First Aid Kit<br/>- Caution Sign<br/>- etc."]
+    end
+
+    YOLOService -->|Loads| Model
+    Model -->|Uses| Classes
+
+    subgraph Storage["💾 Storage"]
+        Uploads["uploads/<br/>Temporary Image Files"]
+        Results["Detection Results<br/>- Annotated Image<br/>- Detections JSON<br/>- Confidence Scores"]
+    end
+
+    ImageUtils -->|Saves| Uploads
+    ImageUtils -->|Generates| Results
+
+    subgraph Response["📥 Response Flow"]
+        JSON["JSON Response<br/><br/>- annotated_image_base64<br/>- detections[]<br/>- class_name<br/>- confidence<br/>- bbox coordinates"]
+    end
+
+    Results -->|Serialize| JSON
+    JSON -->|HTTP 200| UI
+
+    subgraph Display["📊 Results Display"]
+        Display1["Annotated Image<br/>with Bounding Boxes"]
+        Display2["Detection List<br/>Objects Found<br/>Confidence %<br/>Coordinates"]
+        Display3["Download Button<br/>Export Results"]
+    end
+
+    UI -->|Render| Display1
+    UI -->|Show| Display2
+    UI -->|Enable| Display3
+
+    style Client fill:#e1f5ff
+    style Backend fill:#f3e5f5
+    style ML fill:#fff3e0
+    style Storage fill:#e8f5e9
+    style Response fill:#fce4ec
+    style Display fill:#e0f2f1
